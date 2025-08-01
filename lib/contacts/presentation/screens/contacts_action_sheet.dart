@@ -30,11 +30,11 @@ class ContactActionSheet extends StatelessWidget {
     this.contact,
   });
 
-  void _updatePhoto(BuildContext context) {
-    final contactBloc = context.read<ContactBloc>();
+  void _updatePhoto(sheetContext) {
+    final contactBloc = sheetContext.read<ContactBloc>();
 
     showModalBottomSheet(
-      context: context,
+      context: sheetContext,
       backgroundColor: const Color(0xFF1C1C1E),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
@@ -322,7 +322,6 @@ class ContactActionSheet extends StatelessWidget {
 
                         const SizedBox(height: 15),
 
-                        // Home phone (read-only)
                         EditableField(
                           label: 'home',
                           value: homePhone,
@@ -344,7 +343,6 @@ class ContactActionSheet extends StatelessWidget {
 
                         const SizedBox(height: 30),
 
-                        // Notifications
                         Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 15,
