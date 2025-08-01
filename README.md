@@ -9,25 +9,27 @@ Bu loyiha Flutter asosida yozilgan Contacts ilovasi bo‘lib, `flutter_contacts`
 
 ## 📷 Screenshot
 
-<p align="center">
-  <img src="https://i.ibb.co/RkQNktHk/f7897a43-71d9-4477-8b79-fedf73bc2652.png" />
-</p>
-
-<div style="height: 20px;"></div>
+## 📷 Screenshot
 
 <p align="center">
-  <img src="https://i.ibb.co/DfKFxJWz/image.png" />
+  <img src="https://i.postimg.cc/Fz8Xrvj4/photo-1-2025-08-01-09-45-09.jpg" />
 </p>
 
-<div style="height: 20px;"></div>
+<br><br>
 
 <p align="center">
-  <img src="https://i.ibb.co/PsN8zn3G/image.png" />
+  <img src="https://i.postimg.cc/mDgv7kj4/photo-3-2025-08-01-09-45-09.jpg" />
 </p>
 
-<div style="height: 20px;"></div>
+<br><br>
 
 <p align="center">
-  <img src="https://i.ibb.co/G4CjVdZf/image.png" />
+  <img src="https://i.postimg.cc/7hpjvVkP/photo-2-2025-08-01-09-45-09.jpg" />
 </p>
-<div style="height: 70px;"></div>
+
+<br><br>
+
+<p align="center">
+  <img src="https://i.postimg.cc/L61rtrtJ/photo-4-2025-08-01-09-45-09.jpg" />
+</p>
+
