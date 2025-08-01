@@ -30,3 +30,4 @@ Bu loyiha Flutter asosida yozilgan Contacts ilovasi bo‘lib, `flutter_contacts`
 <p align="center">
   <img src="https://i.ibb.co/G4CjVdZf/image.png" />
 </p>
+<div style="height: 70px;"></div>
