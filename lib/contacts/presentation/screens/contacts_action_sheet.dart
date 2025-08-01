@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:telegram/contacts/presentation/bloc/contact_bloc.dart';
 import 'package:telegram/contacts/presentation/bloc/contact_event.dart';
 import 'package:telegram/contacts/presentation/bloc/contact_state.dart';
-import 'package:telegram/contacts/presentation/widgets/profile_widgets/contact_avatar.dart';
-import 'package:telegram/contacts/presentation/widgets/profile_widgets/editable_field.dart';
 
 class ContactActionSheet extends StatelessWidget {
   final String contactId;
@@ -15,6 +14,7 @@ class ContactActionSheet extends StatelessWidget {
   final String mainPhone;
   final String homePhone;
   final String bio;
+  final Contact? contact; 
 
   const ContactActionSheet({
     super.key,
@@ -25,25 +25,115 @@ class ContactActionSheet extends StatelessWidget {
     required this.mainPhone,
     required this.homePhone,
     required this.bio,
+    this.contact,
   });
 
-  // Rasm yangilash - BLoC orqali
   void _updatePhoto(BuildContext context) {
-    print('📸 Photo update triggered for contact: $contactId');
-    context.read<ContactBloc>().add(
-      UpdateContactPhoto(
-        contactId: contactId,
-        imageSource: ImageSource.gallery,
+
+    final contactBloc = context.read<ContactBloc>();
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF1C1C1E),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (bottomSheetContext) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Rasm tanlash',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(bottomSheetContext);
+                    contactBloc.add(
+                      UpdateContactPhoto(
+                        contactId: contactId,
+                        imageSource: ImageSource.gallery,
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Column(
+                      children: [
+                        Icon(
+                          Icons.photo_library,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                        SizedBox(height: 8),
+                        Text('Galereya', style: TextStyle(color: Colors.white)),
+                      ],
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(bottomSheetContext);
+                    contactBloc.add(
+                      UpdateContactPhoto(
+                        contactId: contactId,
+                        imageSource: ImageSource.camera,
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Column(
+                      children: [
+                        Icon(Icons.camera_alt, color: Colors.white, size: 30),
+                        SizedBox(height: 8),
+                        Text('Kamera', style: TextStyle(color: Colors.white)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
       ),
     );
   }
 
-  // Ism yangilash - BLoC orqali
+  // Ism yangilash
   void _updateName(BuildContext context, String newValue, bool isFirstName) {
-    print('✏️ Name update: $newValue, isFirstName: $isFirstName');
 
     final firstName = isFirstName ? newValue : this.firstName;
     final lastName = isFirstName ? this.lastName : newValue;
+
+    // Validatsiya
+    if (newValue.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Ism bo\'sh bo\'lishi mumkin emas'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     context.read<ContactBloc>().add(
       UpdateContactName(
@@ -54,9 +144,18 @@ class ContactActionSheet extends StatelessWidget {
     );
   }
 
-  // Telefon yangilash - BLoC orqali
   void _updatePhone(BuildContext context, String newPhone) {
-    print('📱 Phone update: $newPhone');
+
+    if (newPhone.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Telefon raqam bo\'sh bo\'lishi mumkin emas'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     context.read<ContactBloc>().add(
       UpdateContactPhone(contactId: contactId, phoneNumber: newPhone),
     );
@@ -72,12 +171,17 @@ class ContactActionSheet extends StatelessWidget {
             SnackBar(
               content: Text(state.message),
               backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
             ),
           );
         } else if (state is ContactError) {
           print('❌ BLoC listener: ContactError - ${state.message}');
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 3),
+            ),
           );
         }
       },
@@ -129,21 +233,29 @@ class ContactActionSheet extends StatelessWidget {
                   ),
                 ),
 
-                // Content
                 Expanded(
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       children: [
-                        // Avatar with loading
                         Stack(
                           children: [
-                            ContactAvatar(
-                              avatarUrl: avatarUrl,
-                              firstName: firstName,
-                              lastName: lastName,
-                              onTap: () => _updatePhoto(context),
-                              size: 100,
+                            GestureDetector(
+                              onTap: isUpdating
+                                  ? null
+                                  : () => _updatePhoto(context),
+                              child: Container(
+                                width: 100,
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.grey[700],
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(50),
+                                  child: _buildAvatar(),
+                                ),
+                              ),
                             ),
                             if (isUpdating)
                               Positioned.fill(
@@ -155,6 +267,7 @@ class ContactActionSheet extends StatelessWidget {
                                   child: const Center(
                                     child: CircularProgressIndicator(
                                       color: Colors.blue,
+                                      strokeWidth: 2,
                                     ),
                                   ),
                                 ),
@@ -164,7 +277,6 @@ class ContactActionSheet extends StatelessWidget {
 
                         const SizedBox(height: 30),
 
-                        // Name display
                         Text(
                           '$firstName $lastName'.trim().isEmpty
                               ? 'Noma\'lum'
@@ -179,27 +291,26 @@ class ContactActionSheet extends StatelessWidget {
 
                         const SizedBox(height: 30),
 
-                        // Ism field
                         EditableField(
                           label: 'Ism',
                           value: firstName,
                           hintText: 'Ism kiriting',
                           onSave: (value) => _updateName(context, value, true),
+                          enabled: !isUpdating,
                         ),
 
                         const SizedBox(height: 15),
 
-                        // Familiya field
                         EditableField(
                           label: 'Familiya',
                           value: lastName,
                           hintText: 'Familiya kiriting',
                           onSave: (value) => _updateName(context, value, false),
+                          enabled: !isUpdating,
                         ),
 
                         const SizedBox(height: 20),
 
-                        // Main phone field
                         EditableField(
                           label: 'main',
                           value: mainPhone,
@@ -207,6 +318,7 @@ class ContactActionSheet extends StatelessWidget {
                           valueColor: const Color(0xFF27e65c),
                           keyboardType: TextInputType.phone,
                           onSave: (value) => _updatePhone(context, value),
+                          enabled: !isUpdating,
                         ),
 
                         const SizedBox(height: 15),
@@ -238,6 +350,10 @@ class ContactActionSheet extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(
                             horizontal: 15,
                             vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF1C1C1E),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -273,13 +389,66 @@ class ContactActionSheet extends StatelessWidget {
 
                         // Delete button
                         GestureDetector(
-                          onTap: () => print('🗑️ Delete contact tapped'),
+                          onTap: isUpdating
+                              ? null
+                              : () {
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      backgroundColor: const Color(0xFF1C1C1E),
+                                      title: const Text(
+                                        'Kontaktni o\'chirish',
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                      content: Text(
+                                        '$firstName $lastName kontaktini o\'chirishni xohlaysizmi?',
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                        ),
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.pop(context),
+                                          child: const Text(
+                                            'Bekor qilish',
+                                            style: TextStyle(
+                                              color: Colors.blue,
+                                            ),
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.pop(context);
+                                            Navigator.pop(context);
+                                            print(
+                                              '🗑️ Delete contact: $contactId',
+                                            );
+                                          },
+                                          child: const Text(
+                                            'O\'chirish',
+                                            style: TextStyle(color: Colors.red),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
                           child: Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(vertical: 15),
-                            child: const Text(
+                            decoration: BoxDecoration(
+                              color: isUpdating
+                                  ? Colors.grey[800]
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
                               'Delete Contact',
-                              style: TextStyle(color: Colors.red, fontSize: 16),
+                              style: TextStyle(
+                                color: isUpdating ? Colors.grey : Colors.red,
+                                fontSize: 16,
+                              ),
                               textAlign: TextAlign.center,
                             ),
                           ),
@@ -292,6 +461,206 @@ class ContactActionSheet extends StatelessWidget {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildAvatar() {
+    // Agar contact object bor va rasmi bor bo'lsa
+    if (contact?.photo != null && contact!.photo!.isNotEmpty) {
+      return Image.memory(
+        contact!.photo!,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(Icons.person, size: 50, color: Colors.white);
+        },
+      );
+    }
+
+    if (avatarUrl.startsWith('http')) {
+      return Image.network(
+        avatarUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return const Icon(Icons.person, size: 50, color: Colors.white);
+        },
+      );
+    }
+
+    // Default icon
+    return const Icon(Icons.person, size: 50, color: Colors.white);
+  }
+}
+
+// To'g'irlangan EditableField widget
+class EditableField extends StatefulWidget {
+  final String label;
+  final String value;
+  final String hintText;
+  final Color? valueColor;
+  final TextInputType? keyboardType;
+  final Function(String) onSave;
+  final bool canEdit;
+  final bool enabled;
+
+  const EditableField({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.hintText,
+    required this.onSave,
+    this.valueColor,
+    this.keyboardType,
+    this.canEdit = true,
+    this.enabled = true,
+  });
+
+  @override
+  State<EditableField> createState() => _EditableFieldState();
+}
+
+class _EditableFieldState extends State<EditableField> {
+  late TextEditingController _controller;
+  bool _isEditing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value);
+  }
+
+  @override
+  void didUpdateWidget(EditableField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value != oldWidget.value) {
+      _controller.text = widget.value;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    final trimmedValue = _controller.text.trim();
+    if (trimmedValue.isEmpty && widget.label != 'Familiya') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${widget.label} bo\'sh bo\'lishi mumkin emas'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    widget.onSave(trimmedValue);
+    setState(() => _isEditing = false);
+  }
+
+  void _cancel() {
+    setState(() {
+      _isEditing = false;
+      _controller.text = widget.value;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1C1C1E),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                widget.label,
+                style: const TextStyle(color: Colors.white70, fontSize: 13),
+              ),
+              if (widget.canEdit && !_isEditing && widget.enabled)
+                GestureDetector(
+                  onTap: () => setState(() => _isEditing = true),
+                  child: const Icon(Icons.edit, color: Colors.blue, size: 18),
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (_isEditing) ...[
+            TextField(
+              controller: _controller,
+              enabled: widget.enabled,
+              style: TextStyle(
+                color: widget.valueColor ?? Colors.white,
+                fontSize: 16,
+              ),
+              keyboardType: widget.keyboardType,
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                enabledBorder: const OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white24),
+                ),
+                focusedBorder: const OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue),
+                ),
+                disabledBorder: const OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.white12),
+                ),
+                hintText: widget.hintText,
+                hintStyle: const TextStyle(color: Colors.white54),
+              ),
+              onSubmitted: (_) => _save(),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: widget.enabled ? _save : null,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      disabledBackgroundColor: Colors.grey[700],
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      'Saqlash',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _cancel,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Colors.white70),
+                    ),
+                    child: const Text(
+                      'Bekor',
+                      style: TextStyle(color: Colors.white70),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            Text(
+              widget.value.isEmpty ? '${widget.label} yoq' : widget.value,
+              style: TextStyle(
+                color: widget.valueColor ?? Colors.white,
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+// ignore: depend_on_referenced_packages
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:telegram/contacts/presentation/bloc/contact_bloc.dart';
 import 'contacts/presentation/screens/contacts_screen.dart';

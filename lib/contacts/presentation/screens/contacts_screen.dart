@@ -134,7 +134,13 @@ class _ContactsScreenState extends State<ContactsScreen> {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: _loadContacts,
-                    child: const Text('Qayta urinish'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                    ),
+                    child: const Text(
+                      'Qayta urinish',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               ),
@@ -222,20 +228,18 @@ class _ContactsScreenState extends State<ContactsScreen> {
                 final contactStatus = getContactStatus(contact);
 
                 return ContactListtile(
-                  image: contactAvatar,
+                  image: contactAvatar == 'memory_image' ? null : contactAvatar,
+                  contact: contact, // Contact object ham uzatamiz
                   name: contactName,
                   status: contactStatus,
                   onTap: () {
-                    print(
-                      '👤 Contact tapped: $contactName (ID: ${contact.id})',
-                    );
+                    print('👤 Contact tapped: $contactName (ID: ${contact.id})');
 
                     showModalBottomSheet(
                       context: context,
                       isScrollControlled: true,
                       backgroundColor: Colors.transparent,
                       builder: (sheetContext) {
-                        // BLoC reference'ni saqlab olamiz
                         final contactBloc = context.read<ContactBloc>();
                         return BlocProvider<ContactBloc>.value(
                           value: contactBloc,
@@ -251,6 +255,7 @@ class _ContactsScreenState extends State<ContactsScreen> {
                             bio: contact.organizations.isNotEmpty
                                 ? contact.organizations.first.company
                                 : 'Telegram foydalanuvchisi',
+                            contact: contact, // Contact object ham uzatamiz
                           ),
                         );
                       },

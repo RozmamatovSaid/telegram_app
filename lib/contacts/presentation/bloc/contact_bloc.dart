@@ -14,7 +14,7 @@ class ContactBloc extends Bloc<ContactEvent, ContactState> {
     on<RefreshContacts>(_onRefreshContacts);
   }
 
-  // Kontaktlarni yuklash
+  // Kontaktlarni yuklash - withAccounts: true qo'shildi
   Future<void> _onLoadContacts(
     LoadContacts event,
     Emitter<ContactState> emit,
@@ -23,20 +23,23 @@ class ContactBloc extends Bloc<ContactEvent, ContactState> {
       print('📞 Kontaktlarni yuklamoqda...');
       emit(ContactLoading());
 
+      // BU YERDA ASOSIY O'ZGARISH!
       final contacts = await FlutterContacts.getContacts(
         withProperties: true,
         withPhoto: true,
+        withAccounts: true, // ← Bu muhim parameter!
+        withGroups: true, // ← Bu ham yaxshi bo'ladi
       );
 
-      print('✅ ${contacts.length} ta kontakt yuklandi');
+      print('✅ ${contacts.length} ta kontakt yuklandi (rawId bilan)');
       emit(ContactLoaded(contacts));
     } catch (e) {
       print('❌ Kontaktlar yuklashda xatolik: $e');
-      emit(ContactError('Kontaktlar yuklanmadi'));
+      emit(ContactError('Kontaktlar yuklanmadi: $e'));
     }
   }
 
-  // Kontakt rasmini yangilash - REAL LOGIC
+  // Kontakt rasmini yangilash - to'g'irlangan
   Future<void> _onUpdateContactPhoto(
     UpdateContactPhoto event,
     Emitter<ContactState> emit,
@@ -64,8 +67,14 @@ class ContactBloc extends Bloc<ContactEvent, ContactState> {
       final Uint8List imageBytes = await image.readAsBytes();
       print('📸 BLoC: Image bytes: ${imageBytes.length} bytes');
 
-      // Kontaktni topish
-      final contact = await FlutterContacts.getContact(event.contactId);
+      // Kontaktni to'liq ma'lumotlar bilan yuklash
+      final contact = await FlutterContacts.getContact(
+        event.contactId,
+        withProperties: true,
+        withPhoto: true,
+        withAccounts: true, // ← Bu ham kerak
+      );
+
       if (contact == null) {
         print('❌ BLoC: Kontakt topilmadi');
         emit(ContactError('Kontakt topilmadi'));
@@ -87,7 +96,7 @@ class ContactBloc extends Bloc<ContactEvent, ContactState> {
     }
   }
 
-  // Kontakt ismini yangilash - REAL LOGIC
+  // Kontakt ismini yangilash - to'g'irlangan
   Future<void> _onUpdateContactName(
     UpdateContactName event,
     Emitter<ContactState> emit,
@@ -98,7 +107,14 @@ class ContactBloc extends Bloc<ContactEvent, ContactState> {
       );
       emit(ContactUpdating());
 
-      final contact = await FlutterContacts.getContact(event.contactId);
+      // Kontaktni to'liq ma'lumotlar bilan yuklash
+      final contact = await FlutterContacts.getContact(
+        event.contactId,
+        withProperties: true,
+        withPhoto: true,
+        withAccounts: true, // ← Muhim!
+      );
+
       if (contact == null) {
         print('❌ BLoC: Kontakt topilmadi');
         emit(ContactError('Kontakt topilmadi'));
@@ -106,11 +122,20 @@ class ContactBloc extends Bloc<ContactEvent, ContactState> {
       }
 
       print('👤 BLoC: Kontakt topildi: ${contact.displayName}');
+      print(
+        '🔍 BLoC: Raw contact IDs: ${contact.accounts.map((e) => e.rawId)}',
+      );
 
       // Ismni yangilash
       contact.name.first = event.firstName;
       contact.name.last = event.lastName;
-      contact.displayName = '${event.firstName} ${event.lastName}'.trim();
+
+      // Display name ham yangilanadi
+      final fullName = '${event.firstName} ${event.lastName}'.trim();
+      if (fullName.isNotEmpty) {
+        contact.displayName = fullName;
+      }
+
       print('✏️ BLoC: Yangi ism: ${contact.displayName}');
 
       await contact.update();
@@ -124,7 +149,6 @@ class ContactBloc extends Bloc<ContactEvent, ContactState> {
     }
   }
 
-  // Kontakt telefon raqamini yangilash - REAL LOGIC
   Future<void> _onUpdateContactPhone(
     UpdateContactPhone event,
     Emitter<ContactState> emit,
@@ -133,7 +157,13 @@ class ContactBloc extends Bloc<ContactEvent, ContactState> {
       print('📱 BLoC: Phone update boshlandi: ${event.phoneNumber}');
       emit(ContactUpdating());
 
-      final contact = await FlutterContacts.getContact(event.contactId);
+      final contact = await FlutterContacts.getContact(
+        event.contactId,
+        withProperties: true,
+        withPhoto: true,
+        withAccounts: true, 
+      );
+
       if (contact == null) {
         print('❌ BLoC: Kontakt topilmadi');
         emit(ContactError('Kontakt topilmadi'));
@@ -142,7 +172,6 @@ class ContactBloc extends Bloc<ContactEvent, ContactState> {
 
       print('👤 BLoC: Kontakt topildi: ${contact.displayName}');
 
-      // Telefon raqamni yangilash
       if (contact.phones.isNotEmpty) {
         contact.phones.first.number = event.phoneNumber;
         print('📱 BLoC: Mavjud telefon yangilandi: ${event.phoneNumber}');
