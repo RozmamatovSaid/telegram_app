@@ -1,6 +1,7 @@
 # 🚀 Flutter Contacts App with flutter_contacts package
 
 Bu loyiha Flutter asosida yozilgan Contacts ilovasi bo‘lib, `flutter_contacts` paketidan foydalanib yozilgan. 
+
 Ushbu contacts app Najot Ta'lim Flutter guruhini tugatish imtixoni uchun tayorlandi.
 
 🔗 **Demo video**:  
